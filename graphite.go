@@ -63,8 +63,13 @@ func graphite(c *GraphiteConfig) error {
 	w := bufio.NewWriter(conn)
 	c.Registry.Each(func(name string, i interface{}) {
 		switch metric := i.(type) {
-		case Counter:
+		case *StandardCounter:
 			fmt.Fprintf(w, "%s.%s.count %d %d\n", c.Prefix, name, metric.Count(), now)
+		case *ResetCounter:
+			fmt.Fprintf(w, "%s.%s.count %d %d\n", c.Prefix, name, metric.CountAndClear(), now)
+		case *HitCounter:
+			fmt.Fprintf(w, "%s.%s.count %d %d\n", c.Prefix, name, metric.CountAndClear(), now)
+			c.Registry.Unregister(name)
 		case Gauge:
 			fmt.Fprintf(w, "%s.%s.value %d %d\n", c.Prefix, name, metric.Value(), now)
 		case GaugeFloat64:

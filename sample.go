@@ -600,3 +600,17 @@ type int64Slice []int64
 func (p int64Slice) Len() int           { return len(p) }
 func (p int64Slice) Less(i, j int) bool { return p[i] < p[j] }
 func (p int64Slice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+type ResetSample struct {
+	UniformSample
+}
+
+func NewResetSample(reservoirSize int) Sample {
+	return &ResetSample{UniformSample{reservoirSize: reservoirSize, values: make([]int64, 0, reservoirSize)}}
+}
+
+func (r *ResetSample) Snapshot() Sample {
+	s := r.UniformSample.Snapshot()
+	r.Clear()
+	return s
+}

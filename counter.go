@@ -28,6 +28,20 @@ func NewCounter() Counter {
 	return &StandardCounter{0}
 }
 
+func NewResetCounter() Counter {
+	if UseNilMetrics {
+		return NilCounter{}
+	}
+	return &ResetCounter{StandardCounter{0}}
+}
+
+func NewHitCounter() Counter {
+	if UseNilMetrics {
+		return NilCounter{}
+	}
+	return &HitCounter{ResetCounter{StandardCounter{0}}}
+}
+
 // NewRegisteredCounter constructs and registers a new StandardCounter.
 func NewRegisteredCounter(name string, r Registry) Counter {
 	c := NewCounter()
@@ -109,4 +123,18 @@ func (c *StandardCounter) Inc(i int64) {
 // Snapshot returns a read-only copy of the counter.
 func (c *StandardCounter) Snapshot() Counter {
 	return CounterSnapshot(c.Count())
+}
+
+type ResetCounter struct {
+	StandardCounter
+}
+
+func (c *ResetCounter) CountAndClear() int64 {
+	count := atomic.LoadInt64(&c.count)
+	atomic.StoreInt64(&c.count, 0)
+	return count
+}
+
+type HitCounter struct {
+	ResetCounter
 }
